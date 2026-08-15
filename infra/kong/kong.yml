@@ -144,8 +144,8 @@ services:
         strip_path: false
 
   # Audit Service (T7) — internal read-only, JWT required (INVESTIGATOR / ADMIN)
-  # ⚠️  Path uses /api/v1/audit (not /audit) to match all other backend services.
-  #     Investigator BFF (T6b) will proxy through here; direct access is guarded by JWT.
+  # NOTE: Path uses /api/v1/audit (not /audit) to match all other backend services.
+  #       Investigator BFF (T6b) will proxy through here; direct access is guarded by JWT.
   - name: audit-service
     url: http://audit:8000
     routes:

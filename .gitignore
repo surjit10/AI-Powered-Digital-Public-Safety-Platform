@@ -98,3 +98,6 @@ dump.rdb
 # ============================================================
 uploads/
 evidence_files/
+
+# Archived / Not required
+0-not required/

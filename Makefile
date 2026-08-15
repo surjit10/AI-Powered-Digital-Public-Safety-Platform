@@ -10,6 +10,9 @@
 
 ## ── Start / Stop ────────────────────────────────────────────
 
+setup: ## 1-Click complete setup (keys, kong, compose, kafka, opensearch, accounts)
+	@chmod +x ./setup.sh && ./setup.sh
+
 up: ## Start all infrastructure services
 	@echo "Starting platform infrastructure..."
 	@[ -f .env ] || cp .env.example .env

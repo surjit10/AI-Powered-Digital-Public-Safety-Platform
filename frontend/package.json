@@ -5,12 +5,16 @@
   "workspaces": [
     "citizen",
     "telecom",
-    "bank"
+    "bank",
+    "investigator",
+    "gov-mha"
   ],
   "scripts": {
     "dev:citizen": "npm run dev --workspace=citizen",
     "dev:telecom": "npm run dev --workspace=telecom",
     "dev:bank": "npm run dev --workspace=bank",
+    "dev:investigator": "npm run dev --workspace=investigator",
+    "dev:gov": "npm run dev --workspace=gov-mha",
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces"
   }
