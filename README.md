@@ -67,99 +67,72 @@ India's digital payment ecosystem processes billions of UPI and IMPS transaction
 The platform is designed following **Clean Architecture**, **Domain-Driven Design (DDD)**, and **CQRS with Event Sourcing**.
 
 ```mermaid
-flowchart TB
-    subgraph Clients ["Client Layer (Role-Based Web Portals)"]
-        UI_Citizen["Citizen Portal\n(Port 5173)"]
-        UI_Telecom["Telecom Portal\n(Port 5174)"]
-        UI_Bank["Bank Monitor\n(Port 5175)"]
-        UI_Gov["MHA National Portal\n(Port 5176)"]
-        UI_Inv["Investigator Dashboard\n(Port 5177)"]
+flowchart TD
+    %% Tier 1: Clients
+    subgraph TIER1 ["1. Role-Based Portals & Client Layer"]
+        direction LR
+        P_Citizen["Citizen Portal<br/><code>:5173</code>"]
+        P_Telecom["Telecom Portal<br/><code>:5174</code>"]
+        P_Bank["Bank Monitor<br/><code>:5175</code>"]
+        P_Gov["MHA Command<br/><code>:5176</code>"]
+        P_Inv["Investigator UI<br/><code>:5177</code>"]
     end
 
-    subgraph Gateway ["API Gateway & Security Layer"]
-        Kong["Kong API Gateway (Port 8000)\n- RS256 JWT Verification\n- Rate Limiting\n- Role-Based Routing (RBAC)"]
+    %% Tier 2: Gateway
+    subgraph TIER2 ["2. Security & API Gateway Layer"]
+        Kong["Kong API Gateway <code>:8000</code><br/>• RS256 JWT Authentication & RBAC<br/>• Rate Limiting & SSL Termination<br/>• Intelligent Route Proxying"]
     end
 
-    subgraph BFFs ["Backend-For-Frontend (BFF) Layer"]
-        BFF_Citizen["Citizen BFF\n(Port 8013)"]
-        BFF_Dept["Department BFFs\n(Bank, Telecom, Gov)\n(Port 8000)"]
-        BFF_Inv["Investigator BFF\n(Port 8016)"]
+    %% Tier 3: Core Services & AI
+    subgraph TIER3 ["3. Domain Microservices & Multi-Source AI Engine"]
+        direction TB
+        
+        subgraph Intake ["Intake & Case Management"]
+            S_Auth["Auth Service<br/>(JWT / OAuth2)"]
+            S_Case["Case Service<br/>(State Machine)"]
+            S_Bot["Bot Service<br/>(Multi-turn NLP)"]
+            S_Evidence["Evidence Service<br/>(MinIO + ClamAV)"]
+        end
+
+        subgraph AI_Engine ["Multi-Source AI Risk Fusion Engine"]
+            S_Orch["Inference Orchestrator<br/>(Bayesian Weighted Fusion)"]
+            M_NLP["NLP Scam Intent<br/>(LLaMA 3.3 / RoBERTa)"]
+            M_CV["Counterfeit CV<br/>(EfficientNet)"]
+            M_Graph["GNN Syndicate<br/>(Network Analysis)"]
+            M_Audio["Acoustic / Voice<br/>(Wav2Vec2)"]
+            
+            S_Orch --> M_NLP & M_CV & M_Graph & M_Audio
+        end
+
+        subgraph Intelligence ["Intelligence & Interdiction"]
+            S_Event["Event Processing<br/>(<300ms Fast-Path)"]
+            S_Graph["Graph Service<br/>(Neo4j Linkage)"]
+            S_Geo["Geo Service<br/>(PostGIS Hotspots)"]
+            S_Search["Search Service<br/>(OpenSearch API)"]
+            S_Report["Reporting Service<br/>(RS256 Dossiers)"]
+            S_Audit["Audit & Notif<br/>(Immutable Logs / SSE)"]
+        end
     end
 
-    subgraph CoreServices ["Core Domain Microservices"]
-        AuthSvc["Auth Service\n(OAuth2 / RS256)"]
-        CaseSvc["Case Management\n(State Machine)"]
-        BotSvc["Intake Bot Service\n(NLP Conversational)"]
-        EvidenceSvc["Evidence Service\n(MinIO + ClamAV)"]
-        ReportingSvc["Reporting Service\n(Signed Dossiers)"]
-        GraphSvc["Graph Service\n(Neo4j Linkage)"]
-        GeoSvc["Geospatial Service\n(PostGIS Hotspots)"]
-        SearchSvc["Search Service\n(OpenSearch Index)"]
-        AuditSvc["Audit Service\n(Immutable Log)"]
-        NotifSvc["Notification Service\n(SSE & Webhooks)"]
-        EventSvc["Event Processing\n(Kafka Outbox & Fast-Path)"]
+    %% Tier 4: Storage & Event Backbone
+    subgraph TIER4 ["4. Distributed Storage & Event Streaming Tier"]
+        direction LR
+        DB_Kafka[("Apache Kafka<br/>(12-Partitions)")]
+        DB_Postgres[("PostgreSQL 16<br/>(Cases & Auth)")]
+        DB_Neo4j[("Neo4j 5<br/>(Entity Graph)")]
+        DB_PostGIS[("PostGIS<br/>(Hotspots)")]
+        DB_OpenSearch[("OpenSearch<br/>(Faceted Search)")]
+        DB_MinIO[("MinIO S3<br/>(Evidence Vault)")]
     end
 
-    subgraph AI_Layer ["Multi-Source AI Inference & Fusion Engine"]
-        Orchestrator["Inference Orchestrator\n(Weighted Fusion Engine)"]
-        ML_NLP["Scam NLP Model\n(Groq LLaMA 3.3 / RoBERTa)"]
-        ML_CV["Counterfeit CV Model\n(EfficientNet Document/UI)"]
-        ML_Graph["Graph Analyzer\n(GNN Syndicate Detector)"]
-        ML_Audio["Audio Analyzer\n(Voice Deepfake & Stress)"]
-        ML_Edge["Edge Inference\n(On-Device Model)"]
-    end
-
-    subgraph Storage ["Distributed Storage & Streaming Tier"]
-        Kafka[("Apache Kafka\n(12 Partitions per topic)")]
-        Postgres[("PostgreSQL 16\n(Transactional Data)")]
-        PostGIS[("PostGIS\n(Spatial Data)")]
-        Neo4j[("Neo4j 5\n(Entity Graph)")]
-        OpenSearch[("OpenSearch\n(Full-Text & Facets)")]
-        Redis[("Redis 7\n(Tokens & Cache)")]
-        MinIO[("MinIO S3\n(Encrypted Evidence)")]
-    end
-
-    %% Client to Gateway
-    UI_Citizen & UI_Telecom & UI_Bank & UI_Gov & UI_Inv -->|HTTPS / REST / SSE| Kong
-
-    %% Gateway to BFFs and Services
-    Kong -->|/api/v1/auth| AuthSvc
-    Kong -->|/api/v1/citizen| BFF_Citizen
-    Kong -->|/api/v1/bank & /telecom & /gov| BFF_Dept
-    Kong -->|/api/v1/investigator| BFF_Inv
-    Kong -->|/api/v1/search| SearchSvc
-    Kong -->|/api/v1/events| EventSvc
-
-    %% BFFs to Domain Services
-    BFF_Citizen --> CaseSvc & BotSvc & EvidenceSvc & NotifSvc
-    BFF_Dept --> NotifSvc & ReportingSvc & CaseSvc
-    BFF_Inv --> CaseSvc & GraphSvc & GeoSvc & ReportingSvc & SearchSvc & EvidenceSvc
-
-    %% Event Ingestion & Fast-Path
-    EventSvc -->|Fast-Path Sync <300ms| Orchestrator
-    EventSvc -->|Async Outbox| Kafka
-    CaseSvc & EvidenceSvc & BFF_Dept -->|Outbox Events| Kafka
-
-    %% AI Pipeline
-    Kafka -->|case.created / evidence.uploaded| Orchestrator
-    Orchestrator --> ML_NLP & ML_CV & ML_Graph & ML_Audio
-    ML_Edge -.->|Edge Sync| Orchestrator
-
-    %% Kafka Consumers
-    Kafka -->|case.prediction.completed| CaseSvc
-    Kafka -->|entity.extracted| GraphSvc
-    Kafka -->|location.pinned| GeoSvc
-    Kafka -->|case.indexed| SearchSvc
-    Kafka -->|audit.event| AuditSvc
-    Kafka -->|fraud.alert.mha| NotifSvc
-
-    %% Persistence Links
-    AuthSvc & CaseSvc & AuditSvc --> Postgres
-    GeoSvc --> PostGIS
-    GraphSvc --> Neo4j
-    SearchSvc --> OpenSearch
-    AuthSvc & Orchestrator --> Redis
-    EvidenceSvc & ReportingSvc --> MinIO
+    %% Clean Tier-to-Tier Connections
+    TIER1 -->|REST / HTTPS / SSE| Kong
+    Kong --> Intake & Intelligence
+    Intake -->|Outbox Events| DB_Kafka
+    S_Event -->|Fast-Path Interdiction| S_Orch
+    DB_Kafka -->|Async Pipeline| AI_Engine & Intelligence
+    Intelligence --> TIER4
+    Intake --> DB_Postgres & DB_MinIO
 ```
 
 ---
@@ -171,48 +144,41 @@ When an active scam call occurs, the telecom carrier sends an event via webhook.
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Tel as Telecom Carrier
-    participant EP as Event Processing
-    participant Orch as Inference Orchestrator
-    participant ML as ML Models (NLP & Audio)
-    participant Bank as Bank Core API
-    participant MHA as MHA Webhook
-    participant Kafka as Kafka (Outbox)
+    actor Scammer as 🚨 Scammer
+    actor Victim as 👤 Citizen
+    participant Telecom as 📡 Telecom Carrier
+    participant Interdict as ⚡ Fast-Path Interdiction
+    participant AI as 🧠 AI Fusion Engine
+    participant Bank as 🏦 Bank Core API
+    participant MHA as 🏛️ MHA National Radar
+    participant Kafka as 📨 Kafka Event Bus
 
-    Tel->>EP: POST /api/v1/events/telecom (HMAC-SHA256 Signed)
-    Note over EP: Verify HMAC Signature (<3ms)
+    Scammer->>Victim: Active Scam Call (Spoofed SIM / Threat)
+    Telecom->>Interdict: 1. POST /events/telecom (Signed Webhook)
     
-    rect rgb(235, 248, 255)
-        Note over EP,ML: Synchronous Fast-Path Budget (<200ms)
-        EP->>Orch: POST /orchestrate/fast-path
-        par Concurrently Analyze NLP & Acoustic Audio
-            Orch->>ML: POST /predict/nlp (scam intent & urgency)
-            Orch->>ML: POST /predict/audio (stress & deepfake voice)
-        end
-        ML-->>Orch: NLP Verdict: 0.94 | Audio Verdict: 0.89
-        Note over Orch: Fused Score = 92 (CRITICAL)
-        Orch-->>EP: Return Interdiction Action: BLOCK
+    rect rgb(240, 249, 255)
+        Note over Interdict,AI: Phase 1: Ultra-Fast AI Risk Scoring (<80ms)
+        Interdict->>AI: 2. Analyze NLP Scam Intent & Voice Stress
+        AI-->>Interdict: 3. Risk Verdict = 94/100 (CRITICAL)
     end
 
-    rect rgb(254, 243, 199)
-        Note over EP,MHA: Concurrent Pre-Transfer Freeze & Alert (<80ms)
-        par Freeze Mule Account
-            EP->>Bank: POST /bank/block-transfer (Freeze Account)
-            Bank-->>EP: 200 OK (Mule Account Frozen)
-        and Broadcast MHA National Alert
-            EP->>MHA: POST /alert (Fraud Ring Broadcast)
-            MHA-->>EP: 200 OK (Alert Logged)
+    rect rgb(254, 242, 242)
+        Note over Interdict,MHA: Phase 2: Concurrent Instant Defense (<50ms)
+        par Instant Mule Account Freeze
+            Interdict->>Bank: 4a. Freeze Recipient Account / UPI
+            Bank-->>Interdict: 200 OK (Transfer Blocked)
+        and National Cyber Threat Broadcast
+            Interdict->>MHA: 4b. Push Alert to MHA Live Radar
+            MHA-->>Interdict: 200 OK (Alert Logged)
         end
     end
 
-    EP-->>Tel: 200 OK { "action": "BLOCK", "reason": "CONFIRMED_SCAM_SYNDICATE", "responseTimeMs": 87 }
-    Note over Tel: Telecom Carrier Instantly Drops Scam Call & Blacklists IMEI
+    Interdict-->>Telecom: 5. Decision: BLOCK (Measured: ~87ms, SLA <300ms)
+    Telecom->>Scammer: 6. Carrier Instantly Drops Call & Blacklists IMEI
 
     rect rgb(240, 253, 244)
-        Note over EP,Kafka: Asynchronous Outbox Persistence (Zero Impact on SLA)
-        EP--)Kafka: Publish TelecomEvent.Ingested & Intervention.Requested
-        Kafka--)CaseSvc: Ingest into Investigation Case Record
-        Kafka--)GraphSvc: Update Neo4j Suspect Phone Linkages
+        Note over Interdict,Kafka: Phase 3: Background Audit & Record (Non-blocking)
+        Interdict-)Kafka: 7. Commit Evidence & Case Record to Kafka Outbox
     end
 ```
 
@@ -223,53 +189,51 @@ sequenceDiagram
 The **Inference Orchestrator** merges heterogeneous inputs from text, images/documents, entity graphs, and audio streams using dynamic Bayesian weighted risk fusion.
 
 ```mermaid
-flowchart LR
-    subgraph Inputs ["Multi-Modal Fraud Evidence"]
-        In_Text["Citizen Narrative /\nCall Transcript"]
-        In_Image["Screenshots /\nPhishing APK / Doc"]
-        In_Graph["Phone & Account\nNetwork Topology"]
-        In_Audio["Call Audio /\nVoice Note (WAV/MP3)"]
+flowchart TD
+    %% Modalities
+    subgraph Evidence ["1. Multi-Modal Fraud Evidence Sources"]
+        direction LR
+        E_Text["📝 Narrative / Transcript<br/>(Citizen text, SMS, Chat)"]
+        E_Img["🖼️ Screenshots / Documents<br/>(Fake UPI slip, APK, ID)"]
+        E_Graph["🕸️ Network Topology<br/>(Mule account & IMEI links)"]
+        E_Audio["🎙️ Voice / Call Audio<br/>(Speech recording WAV/MP3)"]
     end
 
-    subgraph Models ["Specialized Machine Learning Models"]
-        M_NLP["RoBERTa / Groq LLaMA 3.3\n(Scam Intent & Urgency)\nWeight: 0.35"]
-        M_CV["EfficientNet-B4\n(Counterfeit UI & Forgery)\nWeight: 0.25"]
-        M_GNN["Graph Neural Network\n(Mule Ring & Syndicate)\nWeight: 0.25"]
-        M_Voice["Wav2Vec2 + Acoustic\n(Deepfake & Voice Stress)\nWeight: 0.15"]
+    %% AI Models
+    subgraph Models ["2. Specialized AI Inference Models"]
+        direction LR
+        M_NLP["Scam NLP Model<br/><b>35% Weight</b><br/>Intent & Urgency Scoring"]
+        M_CV["Counterfeit CV Model<br/><b>25% Weight</b><br/>Visual Forgery Detection"]
+        M_GNN["Graph GNN Model<br/><b>25% Weight</b><br/>Syndicate Ring Linkage"]
+        M_Audio["Audio Analyzer<br/><b>15% Weight</b><br/>Voice Stress & Deepfake"]
     end
 
-    subgraph Fusion ["Bayesian Weighted Fusion Engine"]
-        F_Calc["Dynamic Weight Normalization\nFused Score = ∑ (wᵢ · Sᵢ)\nConfidence Matrix Calculation"]
+    %% Fusion Engine
+    subgraph Fusion ["3. Bayesian Risk Fusion Engine"]
+        F_Engine["<b>Bayesian Weighted Aggregator</b><br/><code>Fused Score = ∑ (Weight × Score)</code><br/>Dynamic Confidence Calibration (0 - 100)"]
     end
 
-    subgraph Decision ["Risk Tiering & Automated Interdiction Actions"]
-        Tier_Crit{"Score ≥ 85\nCRITICAL"}
-        Tier_High{"70 ≤ Score < 85\nHIGH"}
-        Tier_Med{"40 ≤ Score < 70\nMEDIUM"}
-        Tier_Low{"Score < 40\nLOW"}
-        
-        Act_Crit["Immediate Bank Transfer Freeze\nTelecom Carrier Call Drop\nMHA National Alert Broadcast"]
-        Act_High["Bank Pending Review Queue\nMHA SSE Alert Broadcast\nHigh-Priority Investigator Triage"]
-        Act_Med["Standard Investigator Queue\nGeospatial Cluster Pin"]
-        Act_Low["Auto-Archived / Benign Log"]
+    %% Decision Matrix
+    subgraph Tiers ["4. Actionable Risk Tiers & Automated Decisions"]
+        direction LR
+        T_Crit["<b>CRITICAL (≥ 85)</b><br/>• Instant Bank Mule Freeze<br/>• Carrier Call Drop<br/>• MHA Red Alert"]
+        T_High["<b>HIGH (70 – 84)</b><br/>• Bank Pending Review<br/>• Live SSE Threat Alert<br/>• Priority Police Queue"]
+        T_Med["<b>MEDIUM (40 – 69)</b><br/>• Standard Police Triage<br/>• PostGIS Cluster Pin"]
+        T_Low["<b>LOW (< 40)</b><br/>• Auto-Archived<br/>• Benign Activity Log"]
     end
 
-    In_Text --> M_NLP
-    In_Image --> M_CV
-    In_Graph --> M_GNN
-    In_Audio --> M_Voice
+    %% Flow connections
+    E_Text --> M_NLP
+    E_Img --> M_CV
+    E_Graph --> M_GNN
+    E_Audio --> M_Audio
 
-    M_NLP & M_CV & M_GNN & M_Voice --> F_Calc
+    M_NLP & M_CV & M_GNN & M_Audio --> F_Engine
 
-    F_Calc --> Tier_Crit
-    F_Calc --> Tier_High
-    F_Calc --> Tier_Med
-    F_Calc --> Tier_Low
-
-    Tier_Crit --> Act_Crit
-    Tier_High --> Act_High
-    Tier_Med --> Act_Med
-    Tier_Low --> Act_Low
+    F_Engine --> T_Crit
+    F_Engine --> T_High
+    F_Engine --> T_Med
+    F_Engine --> T_Low
 ```
 
 ---
@@ -277,44 +241,55 @@ flowchart LR
 ## 5. Citizen-to-Investigator-to-Bank Lifecycle Flow
 
 ```mermaid
-stateDiagram-v2
-    [*] --> DRAFT: Citizen starts report in Portal / Bot
-    DRAFT --> EVIDENCE_PENDING: Evidence presigned URL requested
-    EVIDENCE_PENDING --> PENDING_AI: Evidence uploaded to MinIO & ClamAV verified
-    
-    state PENDING_AI {
-        [*] --> RUNNING_INFERENCE
-        RUNNING_INFERENCE --> FUSING_SCORES
-        FUSING_SCORES --> [*]
-    }
-    
-    PENDING_AI --> TRIAGED: Risk Score Calculated
-    
-    state TRIAGED {
-        [*] --> CHECK_BANK_RULE
-        CHECK_BANK_RULE --> ROUTE_BANK: 4 Conditions Met (Txn ID + Acct/UPI + Amount + High/Crit)
-        CHECK_BANK_RULE --> ROUTE_INVESTIGATOR: Missing bank condition
-    }
+flowchart TD
+    %% Step 1
+    subgraph Step1 ["Step 1: Citizen Intake & Evidence Upload"]
+        C1["Citizen Files Complaint<br/>(Web Portal or NLP Bot)"]
+        C2["Upload Supporting Evidence<br/>(Screenshots, PDFs, Voice Notes)"]
+        C3["Evidence Security Validation<br/>(MinIO S3 + ClamAV Antivirus + SHA-256)"]
+        C1 --> C2 --> C3
+    end
 
-    ROUTE_BANK --> BANK_PENDING: Appears in Bank Official Portal
-    BANK_PENDING --> BANK_BLOCKED: Bank clicks 'Block Transaction'
-    BANK_PENDING --> BANK_DISMISSED: Bank clicks 'No Action'
-    
-    BANK_BLOCKED --> INVESTIGATING: In-app recovery notice dispatched to Citizen
-    BANK_DISMISSED --> INVESTIGATING: Case continues in police triage
-    ROUTE_INVESTIGATOR --> INVESTIGATING: Appears in Investigator Live Queue
+    %% Step 2
+    subgraph Step2 ["Step 2: AI Multi-Source Risk Scoring"]
+        AI1["Multi-Source Bayesian Fusion<br/>(NLP + CV + Graph + Audio)"]
+        AI2{"Is Risk Score ≥ 70?<br/>(HIGH / CRITICAL)"}
+        C3 --> AI1 --> AI2
+    end
 
-    state INVESTIGATING {
-        [*] --> REVIEW_GRAPH_AND_MAP
-        REVIEW_GRAPH_AND_MAP --> HITL_OVERRIDE: Investigator adjusts tier / notes
-        HITL_OVERRIDE --> GENERATE_INTELLIGENCE: 1-Click Court Dossier
-    }
+    %% Step 3
+    subgraph Step3 ["Step 3: Smart Interdiction & Routing"]
+        B_Check{"Financial Fraud Rule?<br/>1. Txn / UTR ID present<br/>2. Suspect Bank / UPI<br/>3. Monetary Amount<br/>4. High / Critical Score"}
+        
+        subgraph BankFlow ["Bank Official Action (Port 5175)"]
+            B_Pending["Case in Bank 'Pending Review'"]
+            B_Block["Bank Official clicks<br/><b>'Block Transaction'</b>"]
+            B_Notice["Instant Recovery Banner<br/>sent to Citizen Portal"]
+            B_Pending --> B_Block --> B_Notice
+        end
 
-    GENERATE_INTELLIGENCE --> CLOSED_ACTION_TAKEN: RS256-Signed NCRB PDF Package Generated
-    INVESTIGATING --> REJECTED: False Positive / Inconclusive
-    
-    CLOSED_ACTION_TAKEN --> [*]
-    REJECTED --> [*]
+        subgraph PoliceFlow ["Police Investigation (Port 5177)"]
+            Inv_Queue["Case in Police Live Queue"]
+            Inv_Tools["Analyze Neo4j Fraud Graph<br/>& PostGIS Heatmap"]
+            Inv_HITL["Human-in-the-Loop Override<br/>& Investigation Notes"]
+            Inv_Queue --> Inv_Tools --> Inv_HITL
+        end
+    end
+
+    %% Step 4
+    subgraph Step4 ["Step 4: Resolution & Legal Evidence Package"]
+        Legal["<b>1-Click Intelligence Dossier</b><br/>Generates RS256-Signed Court-Admissible<br/>NCRB & Police Case Package"]
+        Close["Case Closed with Action Taken"]
+        Legal --> Close
+    end
+
+    %% Connections between steps
+    AI2 -- Yes --> B_Check
+    AI2 -- No --> Inv_Queue
+    B_Check -- All 4 Conditions Met --> B_Pending
+    B_Check -- Not Financial / Missing Field --> Inv_Queue
+    B_Notice --> Inv_Queue
+    Inv_HITL --> Legal
 ```
 
 ---
